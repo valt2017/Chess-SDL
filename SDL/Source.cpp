@@ -28,6 +28,7 @@ const int posX = 100, posY = 100;
 const int sizeX = 454, sizeY = 454;
 std::string lastMove = "";
 std::string moves = "";
+bool moveWhite = true;
 
 std::string toChessNote(SDL_Point & position)
 { // www.asciitable.com :-)
@@ -56,13 +57,11 @@ void performMove(std::string str)
 		board[newPos.y][newPos.x] = board[oldPos.y][oldPos.x];
 		board[oldPos.y][oldPos.x] = 0;
 	}
-/*
 	//castling       //if the king didn't move
 	if (str == "e1g1") if (moves.find("e1") == -1) performMove("h1f1");
 	if (str == "e8g8") if (moves.find("e8") == -1) performMove("h8f8");
 	if (str == "e1c1") if (moves.find("e1") == -1) performMove("a1d1");
 	if (str == "e8c8") if (moves.find("e8") == -1) performMove("a8d8");
-	*/
 }
 
 int main(int argc, char ** argv) {
@@ -71,7 +70,7 @@ int main(int argc, char ** argv) {
 	// Error checks
 	std::cout << "SDL_Init\n";
 	SDL_Init(SDL_INIT_VIDEO);
-	win = SDL_CreateWindow("SDL & Stockfish", posX, posY, sizeX, sizeY, 0);
+	win = SDL_CreateWindow("SDL & StockFish", posX, posY, sizeX, sizeY, 0);
 	if (win == NULL) {
 		std::cout << "SDL_CreateWindow error\n";
 	}
@@ -116,7 +115,19 @@ int main(int argc, char ** argv) {
 				mousePos.x = e.motion.x;
 				mousePos.y = e.motion.y;
 				if (e.button.button == SDL_BUTTON_LEFT){
-					lastMove = toChessNote(mousePos).c_str();
+					lastMove = toChessNote(mousePos);
+				}
+				// Automatic play for white & black move
+				if (e.button.button == SDL_BUTTON_RIGHT) {
+					std::string movePlayer = getNextMove(moves);
+					std::cout << "Player move: " << movePlayer.c_str() << std::endl;
+					performMove(movePlayer);
+					moves += movePlayer + " ";
+					std::string moveStock = getNextMove(moves);
+					std::cout << "Stockfish move:" << moveStock.c_str() << std::endl;
+					performMove(moveStock);
+					moves += moveStock + " ";
+					std::cout << "Gameplay: " << moves << std::endl;
 				}
 			}
 			/* Mouse button up */
