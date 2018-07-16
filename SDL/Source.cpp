@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <SDL.h>
-#include <SDL_image.h>
 #include <map>
+#include "Connector.hpp"
 
 // Ported to SDL from https://www.youtube.com/user/FamTrinli chess tutorial in SFML
 
@@ -26,6 +26,7 @@ std::map<const char, SDL_Texture *> Textures;
 std::map<const char, std::string> Bitmaps;
 const int posX = 100, posY = 100;
 const int sizeX = 454, sizeY = 454;
+std::string lastMove = "";
 std::string moves = "";
 
 std::string toChessNote(SDL_Point & position)
@@ -50,20 +51,19 @@ void performMove(std::string str)
 	SDL_Point newPos = toBoard(str[2], str[3]);
 	std::cout << "X:" << oldPos.x << "Y:" << oldPos.y << " " << board[oldPos.y][oldPos.x] << std::endl;
 	std::cout << "X:" << newPos.x << "Y:" << newPos.y << " " << board[newPos.y][newPos.x] << std::endl;
-	if (board[oldPos.y][oldPos.x] != 0 && board[newPos.y][newPos.x] == 0) {
+	// source position not empty 
+	if (board[oldPos.y][oldPos.x] != 0) {
 		board[newPos.y][newPos.x] = board[oldPos.y][oldPos.x];
 		board[oldPos.y][oldPos.x] = 0;
 	}
-
 /*
 	//castling       //if the king didn't move
-	if (str == "e1g1") if (position.find("e1") == -1) move("h1f1");
-	if (str == "e8g8") if (position.find("e8") == -1) move("h8f8");
-	if (str == "e1c1") if (position.find("e1") == -1) move("a1d1");
-	if (str == "e8c8") if (position.find("e8") == -1) move("a8d8");
+	if (str == "e1g1") if (moves.find("e1") == -1) performMove("h1f1");
+	if (str == "e8g8") if (moves.find("e8") == -1) performMove("h8f8");
+	if (str == "e1c1") if (moves.find("e1") == -1) performMove("a1d1");
+	if (str == "e8c8") if (moves.find("e8") == -1) performMove("a8d8");
 	*/
 }
-
 
 int main(int argc, char ** argv) {
 	SDL_Window *win = NULL;
@@ -101,6 +101,9 @@ int main(int argc, char ** argv) {
 		Figures[-i] = SDL_Rect{ (i - 1)*FigureSize, 0, FigureSize, FigureSize};
 		Figures[i] = SDL_Rect{ (i - 1)*FigureSize, FigureSize, FigureSize, FigureSize};
 	}
+
+	ConnectToEngine("stockfish_9_x64.exe");
+
 	while (1) {
 		SDL_Event e;
 		if (SDL_PollEvent(&e)) {
@@ -113,7 +116,7 @@ int main(int argc, char ** argv) {
 				mousePos.x = e.motion.x;
 				mousePos.y = e.motion.y;
 				if (e.button.button == SDL_BUTTON_LEFT){
-					moves = toChessNote(mousePos).c_str();
+					lastMove = toChessNote(mousePos).c_str();
 				}
 			}
 			/* Mouse button up */
@@ -122,14 +125,21 @@ int main(int argc, char ** argv) {
 				mousePos.x = e.motion.x;
 				mousePos.y = e.motion.y;
 				if (e.button.button == SDL_BUTTON_LEFT) {
-					std::string newPos = toChessNote(mousePos);
-					if (moves != newPos) {
-						moves += newPos;
-						std::cout << "Move to execute:" << moves.c_str() << std::endl;
-						performMove(moves);
+					std::string newMove = toChessNote(mousePos);
+					if (lastMove != newMove) {
+						lastMove += newMove;
+						std::cout << "Player move: " << lastMove.c_str() << std::endl;
+						performMove(lastMove);
+						moves += lastMove + " ";
+						// obtain StockFish move
+						std::string moveStock = getNextMove(moves);
+						std::cout << "Stockfish move:" << moveStock.c_str() << std::endl;
+						performMove(moveStock);
+						moves += moveStock + " ";
+						std::cout << "Gameplay: " << moves << std::endl;
 					}
 					else
-						moves = "";
+						lastMove = "";
 				}
 			}
 		}
@@ -169,5 +179,6 @@ int main(int argc, char ** argv) {
 	SDL_DestroyWindow(win);
 	SDL_Quit();
 	std::cout << "SDL_Quit\n";
+	CloseConnection();
 	return 0;
 }
