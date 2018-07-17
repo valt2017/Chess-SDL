@@ -102,7 +102,10 @@ int main(int argc, char ** argv) {
 	}
 
 	ConnectToEngine("stockfish_9_x64.exe");
-
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION,
+		"Information",
+		"No moves correctness check. \nLeft mouse button for manual move. \nRight mouse button for automatic move",
+		NULL);
 	while (1) {
 		SDL_Event e;
 		if (SDL_PollEvent(&e)) {
